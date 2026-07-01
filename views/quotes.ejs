@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Inspiration — Kutipan Motivasi Harian</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <span class="eyebrow">Portal Motivasi Harian</span>
+      <h1>Daily <em>Inspiration</em></h1>
+      <p class="sub">Sembilan kutipan pilihan, diambil acak setiap kali halaman ini dibuka. Klik acak untuk kombinasi baru tanpa memuat ulang halaman.</p>
+      <div class="toolbar">
+        <button class="shuffle-btn" id="shuffleBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+          </svg>
+          Acak lagi
+        </button>
+        <span class="count-note" id="countNote"><%= quotes.length %> kutipan ditampilkan</span>
+      </div>
+    </header>
+
+    <main>
+      <% if (quotes.length === 0) { %>
+        <div class="empty-state">Belum ada kutipan di database. Jalankan <code>npm run seed</code> untuk mengisi data awal.</div>
+      <% } else { %>
+        <div class="grid" id="quoteGrid">
+          <% quotes.forEach(function(q, i) { %>
+            <div class="card" data-num="<%= String(i + 1).padStart(2, '0') %>">
+              <span class="quote-mark">&ldquo;</span>
+              <p class="quote-text"><%= q.text %></p>
+              <span class="quote-author"><%= q.author %></span>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </main>
+
+    <footer class="foot">Diperbarui setiap kali halaman dimuat &middot; Data dari MySQL</footer>
+  </div>
+
+  <script>
+    const btn = document.getElementById('shuffleBtn');
+    const grid = document.getElementById('quoteGrid');
+    const countNote = document.getElementById('countNote');
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function shuffleQuotes() {
+      btn.classList.add('spinning');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/quotes/');
+        const json = await res.json();
+        if (json.success && grid) {
+          grid.innerHTML = json.data.map((q, i) => `
+            <div class="card" data-num="${String(i + 1).padStart(2, '0')}">
+              <span class="quote-mark">&ldquo;</span>
+              <p class="quote-text">${escapeHtml(q.text)}</p>
+              <span class="quote-author">${escapeHtml(q.author)}</span>
+            </div>
+          `).join('');
+          countNote.textContent = `${json.count} kutipan ditampilkan`;
+        }
+      } catch (err) {
+        console.error('Gagal mengambil quotes baru', err);
+      } finally {
+        setTimeout(() => btn.classList.remove('spinning'), 500);
+        btn.disabled = false;
+      }
+    }
+
+    btn.addEventListener('click', shuffleQuotes);
+  </script>
+</body>
+</html>
